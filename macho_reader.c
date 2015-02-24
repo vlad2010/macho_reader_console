@@ -175,6 +175,10 @@ void print_load_commands(int fd)
              case(LC_DYLD_INFO):     printf("LC_DYLD_INFO: Compressed dyld information."); break;
              case(LC_DYLD_INFO_ONLY):    printf("LC_DYLD_INFO_ONLY: Compressed dyld information only."); break;
 
+             case(LC_LOAD_UPWARD_DYLIB): printf("LC_LOAD_UPWARD_DYLIB: Load upward dylib."); break;
+             case(LC_VERSION_MIN_MACOSX):     printf("LC_VERSION_MIN_MACOSX: Minimum Mac OS X version."); break;
+             case(LC_VERSION_MIN_IPHONEOS):    printf("LC_VERSION_MIN_IPHONEOS: Minimum iOS version."); break;
+
          }
 
          printf("\n");
