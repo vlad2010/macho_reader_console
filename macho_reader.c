@@ -71,34 +71,37 @@ void print_header(int fd)
      
     printf("Number of load commands     : %d\n",mh32.ncmds);
     printf("Size of load commands       : %d\n",mh32.sizeofcmds);
-
     printf("Flags                       : 0x%04x\n",mh32.flags);
      
     if(mh32.flags & MH_NOUNDEFS)   printf ("0x%08x - MH_NOUNDEF: No undefined references.\n", MH_NOUNDEFS);
     if(mh32.flags & MH_INCRLINK)   printf ("0x%08x - MH_INCRLINK: It is incremental link against base file. Cannot' be linked again\n", MH_INCRLINK);
     if(mh32.flags & MH_DYLDLINK)   printf ("0x%08x - MH_DYLDLINK: The file is input for the dynamic linker and cannot be statically linked again.\n", MH_DYLDLINK);
-    if(mh32.flags & MH_TWOLEVEL)   printf ("0x%08x - MH_TWOLEVEL: The image is using two-level namespace bindings.\n", MH_TWOLEVEL);
     if(mh32.flags & MH_BINDATLOAD) printf ("0x%08x - MH_BINDATLOAD: Bind undefined references at load.\n", MH_BINDATLOAD);
     if(mh32.flags & MH_PREBOUND)   printf ("0x%08x - MH_PREBOUND: The file’s undefined references are prebound.\n", MH_PREBOUND);
-    if(mh32.flags & MH_PREBINDABLE)     printf ("0x%08x - MH_PREBINDABLE: This file is not prebound.\n", MH_PREBINDABLE);
-    if(mh32.flags & MH_NOFIXPREBINDING) printf ("0x%08x - MH_NOFIXPREBINDING: The dynamic linker doesn’t notify the prebinding agent about this executable. \n",MH_NOFIXPREBINDING );
-    if(mh32.flags & MH_ALLMODSBOUND)   printf ("0x%08x - MH_ALLMODSBOUND: This binary binds to all two-level namespace modules of its dependent libraries.\n",MH_ALLMODSBOUND );
-    if(mh32.flags & MH_CANONICAL)   printf ("0x%08x - MH_CANONICAL: This file has been canonicalized by unprebinding—clearing prebinding information from the file.\n",MH_CANONICAL );
     if(mh32.flags & MH_SPLIT_SEGS)   printf ("0x%08x - MH_SPLIT_SEGS: The file has its read-only and read-write segments split.\n", MH_SPLIT_SEGS );
+    if(mh32.flags & MH_LAZY_INIT)   printf ("0x%08x - MH_LAZY_INIT: The shared library init routine is to be run lazily via catching memory faults to its writeable segments.\n", MH_LAZY_INIT );
+    if(mh32.flags & MH_TWOLEVEL)   printf ("0x%08x - MH_TWOLEVEL: The image is using two-level namespace bindings.\n", MH_TWOLEVEL);
     if(mh32.flags & MH_FORCE_FLAT)   printf ("0x%08x - MH_FORCE_FLAT: The executable is forcing all images to use flat namespace bindings. \n",MH_FORCE_FLAT );
-    if(mh32.flags & MH_SUBSECTIONS_VIA_SYMBOLS)   printf ("0x%08x - MH_SUBSECTIONS_VIA_SYMBOLS: The sections of the object file can be divided into individual blocks.\n", MH_SUBSECTIONS_VIA_SYMBOLS );
     if(mh32.flags & MH_NOMULTIDEFS)   printf ("0x%08x - MH_NOMULTIDEFS: This umbrella guarantees there are no multiple definitions of symbols in its subimages.\n", MH_NOMULTIDEFS);
-
-    if(mh32.flags & MH_PIE)   printf ("0x%08x - MH_PIE: The OS will load the main executable at a random address.\n", MH_PIE);
-    if(mh32.flags & MH_ROOT_SAFE)   printf ("0x%08x - MH_ROOT_SAFE: Binary is safe to use by root.\n", MH_ROOT_SAFE);
-
+    if(mh32.flags & MH_NOFIXPREBINDING) printf ("0x%08x - MH_NOFIXPREBINDING: The dynamic linker doesn’t notify the prebinding agent about this executable. \n",MH_NOFIXPREBINDING );
+    if(mh32.flags & MH_PREBINDABLE)     printf ("0x%08x - MH_PREBINDABLE: This file is not prebound.\n", MH_PREBINDABLE);
+    if(mh32.flags & MH_ALLMODSBOUND)   printf ("0x%08x - MH_ALLMODSBOUND: This binary binds to all two-level namespace modules of its dependent libraries.\n",MH_ALLMODSBOUND );
+    if(mh32.flags & MH_SUBSECTIONS_VIA_SYMBOLS)   printf ("0x%08x - MH_SUBSECTIONS_VIA_SYMBOLS: The sections of the object file can be divided into individual blocks.\n", MH_SUBSECTIONS_VIA_SYMBOLS );
+    if(mh32.flags & MH_CANONICAL)   printf ("0x%08x - MH_CANONICAL: This file has been canonicalized by unprebinding—clearing prebinding information from the file.\n",MH_CANONICAL );
+    if(mh32.flags & MH_WEAK_DEFINES)   printf ("0x%08x - MH_WEAK_DEFINES: The final linked image contains external weak symbols.\n",MH_WEAK_DEFINES );
+    if(mh32.flags & MH_BINDS_TO_WEAK)   printf ("0x%08x - MH_BINDS_TO_WEAK: The final linked image uses weak symbols.\n",MH_BINDS_TO_WEAK );
     if(mh32.flags & MH_ALLOW_STACK_EXECUTION)   printf ("0x%08x - MH_ALLOW_STACK_EXECUTION: Permission to execute stack.\n", MH_ALLOW_STACK_EXECUTION);
+    if(mh32.flags & MH_ROOT_SAFE)   printf ("0x%08x - MH_ROOT_SAFE: Binary is safe to use by root.\n", MH_ROOT_SAFE);
+    if(mh32.flags & MH_SETUID_SAFE)   printf ("0x%08x - MH_SETUID_SAFE: It is safe for use in processes when issetugid() is true.\n", MH_SETUID_SAFE);
+    if(mh32.flags & MH_NO_REEXPORTED_DYLIBS)   printf ("0x%08x - MH_NO_REEXPORTED_DYLIBS: The static linker does not need to examine dependent dylibs to see if any are re-exported.\n", MH_NO_REEXPORTED_DYLIBS);
+    if(mh32.flags & MH_PIE)   printf ("0x%08x - MH_PIE: The OS will load the main executable at a random address.\n", MH_PIE);
+    if(mh32.flags & MH_DEAD_STRIPPABLE_DYLIB)   printf ("0x%08x - MH_DEAD_STRIPPABLE_DYLIB: Do not create a LC_LOAD_DYLIB load command to the dylib if no symbols are being referenced from the dylib.\n", MH_DEAD_STRIPPABLE_DYLIB);
+    if(mh32.flags & MH_HAS_TLV_DESCRIPTORS)   printf ("0x%08x - MH_HAS_TLV_DESCRIPTORS: Contains a section of type S_THREAD_LOCAL_VARIABLES.\n", MH_HAS_TLV_DESCRIPTORS);
     if(mh32.flags & MH_NO_HEAP_EXECUTION)   printf ("0x%08x - MH_NO_HEAP_EXECUTION: No heap execution\n", MH_NO_HEAP_EXECUTION);
-
    }
    else
    {
-   	 printf("Unknown architecture. Can't print header.\n");
+   	   printf("Unknown architecture. Can't print header.\n");
    }
 }
 
