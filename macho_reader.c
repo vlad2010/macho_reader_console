@@ -1,29 +1,8 @@
-#include <stdio.h>
-#include <usr/include/mach-o/loader.h>
-#include <usr/include/mach/machine.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-
-#define EXENAME "macho_reader"
-#define DEBUG 1 
-
-enum arch_type
-{
-   ARCH64 = 64,
-   ARCH386 = 386,
-   ARCHUNKNOWN = 999
-};
-
-int check_architecture(int fd);
-void print_load_commands(int fd);
+#include "macho_reader.h"
 
 void print_help()
 {
      printf ("Usage: %s executable file\n", EXENAME); 
-
 }
 
 void print_header(int fd)
@@ -178,9 +157,7 @@ void print_load_commands(int fd)
          printf("\n");
          lseek(fd, lc.cmdsize-sizeof(lc), SEEK_CUR);
      }
-
       return;
-
 }
 
 int check_architecture(int fd)
@@ -206,7 +183,6 @@ return ARCHUNKNOWN;
 }
 
 
-
 int main (int argc, char *argv[])
 {
     if(argc<2)
@@ -227,7 +203,7 @@ int main (int argc, char *argv[])
     if(fd==-1)
     {
         printf("Can't open file:%s\n", argv[1]); 
-    	return 0;
+      	return 0;
     }
     print_header(fd); 
     print_load_commands(fd);
