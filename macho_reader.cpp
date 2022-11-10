@@ -7,34 +7,40 @@ void print_help()
 
 void print_header(int fd)
 {
-   struct mach_header mh32;
-   //struct mach_header_64 mh64;
-    
-   int arch = check_architecture(fd);
-   lseek(fd,0,SEEK_SET);
-   if((arch==ARCH386) || (arch=ARCH64))
-   {
-   	#ifdef DEBUG
-   	   printf("32 bit arch\n");
-   	#endif
+    struct mach_header_64 mh;
+   
+    int arch = check_architecture(fd);
+    if( arch != ARCH64 )
+    {
+        printf("Architecture is not arch64. Can't print header.\n");
+        return;
+    } 
 
-   	  read(fd,&mh32, sizeof(mh32));
+   	#ifdef DEBUG
+   	   printf("64 bit arch\n");
+   	#endif
+   
+    lseek(fd,0,SEEK_SET);
+   	read(fd,&mh, sizeof(mh));
 
     printf("\nMach-o executable file header\n");
     printf("-------------------------------------------------\n");
 
     printf("Cpu type                    : ");
-    switch(mh32.cputype)
+    switch(mh.cputype)
     {
       case (CPU_TYPE_POWERPC):   printf("Power PC 32 Bit\n"); break;
       case (CPU_TYPE_POWERPC64): printf("Power PC 64 Bit\n"); break;
       case (CPU_TYPE_I386):      printf("x86 32 Bit\n"); break;
       case (CPU_TYPE_X86_64):    printf("x86 64 Bit\n"); break;
+      case(CPU_TYPE_ARM): printf("ARM \n"); break;
+      case(CPU_TYPE_ARM64): printf("ARM64 \n"); break;
+      case(CPU_TYPE_ARM64_32): printf("ARM64 32\n"); break; 
     }
 
-    printf("Cpu subtype                 : 0x%04x\n", mh32.cpusubtype);
+    printf("Cpu subtype                 : 0x%04x\n", mh.cpusubtype);
     printf("File type                   : ");
-    switch(mh32.filetype)
+    switch(mh.filetype)
     {
       case (MH_OBJECT):   printf ("Object file\n"); break;
       case (MH_EXECUTE):  printf ("Executable file\n"); break;
@@ -48,60 +54,52 @@ void print_header(int fd)
 
     }
      
-    printf("Number of load commands     : %d\n",mh32.ncmds);
-    printf("Size of load commands       : %d\n",mh32.sizeofcmds);
-    printf("Flags                       : 0x%04x\n",mh32.flags);
+    printf("Number of load commands     : %d\n",mh.ncmds);
+    printf("Size of load commands       : %d\n",mh.sizeofcmds);
+    printf("Flags                       : 0x%04x\n",mh.flags);
      
-    if(mh32.flags & MH_NOUNDEFS)   printf ("0x%08x - MH_NOUNDEF: No undefined references.\n", MH_NOUNDEFS);
-    if(mh32.flags & MH_INCRLINK)   printf ("0x%08x - MH_INCRLINK: It is incremental link against base file. Cannot' be linked again\n", MH_INCRLINK);
-    if(mh32.flags & MH_DYLDLINK)   printf ("0x%08x - MH_DYLDLINK: The file is input for the dynamic linker and cannot be statically linked again.\n", MH_DYLDLINK);
-    if(mh32.flags & MH_BINDATLOAD) printf ("0x%08x - MH_BINDATLOAD: Bind undefined references at load.\n", MH_BINDATLOAD);
-    if(mh32.flags & MH_PREBOUND)   printf ("0x%08x - MH_PREBOUND: The file’s undefined references are prebound.\n", MH_PREBOUND);
-    if(mh32.flags & MH_SPLIT_SEGS)   printf ("0x%08x - MH_SPLIT_SEGS: The file has its read-only and read-write segments split.\n", MH_SPLIT_SEGS );
-    if(mh32.flags & MH_LAZY_INIT)   printf ("0x%08x - MH_LAZY_INIT: The shared library init routine is to be run lazily via catching memory faults to its writeable segments.\n", MH_LAZY_INIT );
-    if(mh32.flags & MH_TWOLEVEL)   printf ("0x%08x - MH_TWOLEVEL: The image is using two-level namespace bindings.\n", MH_TWOLEVEL);
-    if(mh32.flags & MH_FORCE_FLAT)   printf ("0x%08x - MH_FORCE_FLAT: The executable is forcing all images to use flat namespace bindings. \n",MH_FORCE_FLAT );
-    if(mh32.flags & MH_NOMULTIDEFS)   printf ("0x%08x - MH_NOMULTIDEFS: This umbrella guarantees there are no multiple definitions of symbols in its subimages.\n", MH_NOMULTIDEFS);
-    if(mh32.flags & MH_NOFIXPREBINDING) printf ("0x%08x - MH_NOFIXPREBINDING: The dynamic linker doesn’t notify the prebinding agent about this executable. \n",MH_NOFIXPREBINDING );
-    if(mh32.flags & MH_PREBINDABLE)     printf ("0x%08x - MH_PREBINDABLE: This file is not prebound.\n", MH_PREBINDABLE);
-    if(mh32.flags & MH_ALLMODSBOUND)   printf ("0x%08x - MH_ALLMODSBOUND: This binary binds to all two-level namespace modules of its dependent libraries.\n",MH_ALLMODSBOUND );
-    if(mh32.flags & MH_SUBSECTIONS_VIA_SYMBOLS)   printf ("0x%08x - MH_SUBSECTIONS_VIA_SYMBOLS: The sections of the object file can be divided into individual blocks.\n", MH_SUBSECTIONS_VIA_SYMBOLS );
-    if(mh32.flags & MH_CANONICAL)   printf ("0x%08x - MH_CANONICAL: This file has been canonicalized by unprebinding—clearing prebinding information from the file.\n",MH_CANONICAL );
-    if(mh32.flags & MH_WEAK_DEFINES)   printf ("0x%08x - MH_WEAK_DEFINES: The final linked image contains external weak symbols.\n",MH_WEAK_DEFINES );
-    if(mh32.flags & MH_BINDS_TO_WEAK)   printf ("0x%08x - MH_BINDS_TO_WEAK: The final linked image uses weak symbols.\n",MH_BINDS_TO_WEAK );
-    if(mh32.flags & MH_ALLOW_STACK_EXECUTION)   printf ("0x%08x - MH_ALLOW_STACK_EXECUTION: Permission to execute stack.\n", MH_ALLOW_STACK_EXECUTION);
-    if(mh32.flags & MH_ROOT_SAFE)   printf ("0x%08x - MH_ROOT_SAFE: Binary is safe to use by root.\n", MH_ROOT_SAFE);
-    if(mh32.flags & MH_SETUID_SAFE)   printf ("0x%08x - MH_SETUID_SAFE: It is safe for use in processes when issetugid() is true.\n", MH_SETUID_SAFE);
-    if(mh32.flags & MH_NO_REEXPORTED_DYLIBS)   printf ("0x%08x - MH_NO_REEXPORTED_DYLIBS: The static linker does not need to examine dependent dylibs to see if any are re-exported.\n", MH_NO_REEXPORTED_DYLIBS);
-    if(mh32.flags & MH_PIE)   printf ("0x%08x - MH_PIE: The OS will load the main executable at a random address.\n", MH_PIE);
-    if(mh32.flags & MH_DEAD_STRIPPABLE_DYLIB)   printf ("0x%08x - MH_DEAD_STRIPPABLE_DYLIB: Do not create a LC_LOAD_DYLIB load command to the dylib if no symbols are being referenced from the dylib.\n", MH_DEAD_STRIPPABLE_DYLIB);
-    if(mh32.flags & MH_HAS_TLV_DESCRIPTORS)   printf ("0x%08x - MH_HAS_TLV_DESCRIPTORS: Contains a section of type S_THREAD_LOCAL_VARIABLES.\n", MH_HAS_TLV_DESCRIPTORS);
-    if(mh32.flags & MH_NO_HEAP_EXECUTION)   printf ("0x%08x - MH_NO_HEAP_EXECUTION: No heap execution\n", MH_NO_HEAP_EXECUTION);
-   }
-   else
-   {
-   	   printf("Unknown architecture. Can't print header.\n");
-   }
+    if(mh.flags & MH_NOUNDEFS)   printf ("0x%08x - MH_NOUNDEF: No undefined references.\n", MH_NOUNDEFS);
+    if(mh.flags & MH_INCRLINK)   printf ("0x%08x - MH_INCRLINK: It is incremental link against base file. Cannot' be linked again\n", MH_INCRLINK);
+    if(mh.flags & MH_DYLDLINK)   printf ("0x%08x - MH_DYLDLINK: The file is input for the dynamic linker and cannot be statically linked again.\n", MH_DYLDLINK);
+    if(mh.flags & MH_BINDATLOAD) printf ("0x%08x - MH_BINDATLOAD: Bind undefined references at load.\n", MH_BINDATLOAD);
+    if(mh.flags & MH_PREBOUND)   printf ("0x%08x - MH_PREBOUND: The file’s undefined references are prebound.\n", MH_PREBOUND);
+    if(mh.flags & MH_SPLIT_SEGS)   printf ("0x%08x - MH_SPLIT_SEGS: The file has its read-only and read-write segments split.\n", MH_SPLIT_SEGS );
+    if(mh.flags & MH_LAZY_INIT)   printf ("0x%08x - MH_LAZY_INIT: The shared library init routine is to be run lazily via catching memory faults to its writeable segments.\n", MH_LAZY_INIT );
+    if(mh.flags & MH_TWOLEVEL)   printf ("0x%08x - MH_TWOLEVEL: The image is using two-level namespace bindings.\n", MH_TWOLEVEL);
+    if(mh.flags & MH_FORCE_FLAT)   printf ("0x%08x - MH_FORCE_FLAT: The executable is forcing all images to use flat namespace bindings. \n",MH_FORCE_FLAT );
+    if(mh.flags & MH_NOMULTIDEFS)   printf ("0x%08x - MH_NOMULTIDEFS: This umbrella guarantees there are no multiple definitions of symbols in its subimages.\n", MH_NOMULTIDEFS);
+    if(mh.flags & MH_NOFIXPREBINDING) printf ("0x%08x - MH_NOFIXPREBINDING: The dynamic linker doesn’t notify the prebinding agent about this executable. \n",MH_NOFIXPREBINDING );
+    if(mh.flags & MH_PREBINDABLE)     printf ("0x%08x - MH_PREBINDABLE: This file is not prebound.\n", MH_PREBINDABLE);
+    if(mh.flags & MH_ALLMODSBOUND)   printf ("0x%08x - MH_ALLMODSBOUND: This binary binds to all two-level namespace modules of its dependent libraries.\n",MH_ALLMODSBOUND );
+    if(mh.flags & MH_SUBSECTIONS_VIA_SYMBOLS)   printf ("0x%08x - MH_SUBSECTIONS_VIA_SYMBOLS: The sections of the object file can be divided into individual blocks.\n", MH_SUBSECTIONS_VIA_SYMBOLS );
+    if(mh.flags & MH_CANONICAL)   printf ("0x%08x - MH_CANONICAL: This file has been canonicalized by unprebinding—clearing prebinding information from the file.\n",MH_CANONICAL );
+    if(mh.flags & MH_WEAK_DEFINES)   printf ("0x%08x - MH_WEAK_DEFINES: The final linked image contains external weak symbols.\n",MH_WEAK_DEFINES );
+    if(mh.flags & MH_BINDS_TO_WEAK)   printf ("0x%08x - MH_BINDS_TO_WEAK: The final linked image uses weak symbols.\n",MH_BINDS_TO_WEAK );
+    if(mh.flags & MH_ALLOW_STACK_EXECUTION)   printf ("0x%08x - MH_ALLOW_STACK_EXECUTION: Permission to execute stack.\n", MH_ALLOW_STACK_EXECUTION);
+    if(mh.flags & MH_ROOT_SAFE)   printf ("0x%08x - MH_ROOT_SAFE: Binary is safe to use by root.\n", MH_ROOT_SAFE);
+    if(mh.flags & MH_SETUID_SAFE)   printf ("0x%08x - MH_SETUID_SAFE: It is safe for use in processes when issetugid() is true.\n", MH_SETUID_SAFE);
+    if(mh.flags & MH_NO_REEXPORTED_DYLIBS)   printf ("0x%08x - MH_NO_REEXPORTED_DYLIBS: The static linker does not need to examine dependent dylibs to see if any are re-exported.\n", MH_NO_REEXPORTED_DYLIBS);
+    if(mh.flags & MH_PIE)   printf ("0x%08x - MH_PIE: The OS will load the main executable at a random address.\n", MH_PIE);
+    if(mh.flags & MH_DEAD_STRIPPABLE_DYLIB)   printf ("0x%08x - MH_DEAD_STRIPPABLE_DYLIB: Do not create a LC_LOAD_DYLIB load command to the dylib if no symbols are being referenced from the dylib.\n", MH_DEAD_STRIPPABLE_DYLIB);
+    if(mh.flags & MH_HAS_TLV_DESCRIPTORS)   printf ("0x%08x - MH_HAS_TLV_DESCRIPTORS: Contains a section of type S_THREAD_LOCAL_VARIABLES.\n", MH_HAS_TLV_DESCRIPTORS);
+    if(mh.flags & MH_NO_HEAP_EXECUTION)   printf ("0x%08x - MH_NO_HEAP_EXECUTION: No heap execution\n", MH_NO_HEAP_EXECUTION);
 }
 
 void print_load_commands(int fd)
 {
-   struct mach_header mh32;
+   struct mach_header_64 mh;
    struct load_command lc;
 
-   //struct mach_header_64 mh64;
-   
-   lseek(fd,0,SEEK_SET);
-   read(fd,&mh32, sizeof(mh32));
+   lseek(fd, 0, SEEK_SET);
+   read(fd, &mh, sizeof(mh));
 
-    printf("Number of load commands     : %d\n",mh32.ncmds);
-    printf("Size of load commands       : %d\n",mh32.sizeofcmds);
+    printf("Number of load commands     : %d\n",mh.ncmds);
+    printf("Size of load commands       : %d\n",mh.sizeofcmds);
 
-     for (int i=0;i<mh32.ncmds;i++)
+     for (int i=0; i < mh.ncmds; i++)
      {
-         read(fd,&lc, sizeof(lc));
+         read(fd, &lc, sizeof(lc));
          //printf ("\n%02d) Command type: 0x%08x Size:%d \n", i, lc.cmd, lc.cmdsize);
-
          printf("%02d) 0x%08x Size:%04d ",i+1, lc.cmd, lc.cmdsize);
 
          switch(lc.cmd) 
@@ -143,6 +141,7 @@ void print_load_commands(int fd)
              case(LC_DYLD_INFO_ONLY):    printf("LC_DYLD_INFO_ONLY: Compressed dyld information only."); break;
              case(LC_LOAD_UPWARD_DYLIB): printf("LC_LOAD_UPWARD_DYLIB: Load upward dylib."); break;
              case(LC_VERSION_MIN_MACOSX):     printf("LC_VERSION_MIN_MACOSX: Minimum Mac OS X version."); break;
+             case(LC_BUILD_VERSION):  printf("LC_BUILD_VERSION: Minimum Mac OS X version."); break;
              case(LC_VERSION_MIN_IPHONEOS):    printf("LC_VERSION_MIN_IPHONEOS: Minimum iOS version."); break;
              case(LC_FUNCTION_STARTS): printf("LC_FUNCTION_STARTS: Compressed table of function start addresses."); break;
              case(LC_DYLD_ENVIRONMENT):     printf("LC_DYLD_ENVIRONMENT: String for dyld to treat like environment variable."); break;
@@ -152,25 +151,27 @@ void print_load_commands(int fd)
              case(LC_DYLIB_CODE_SIGN_DRS): printf("LC_DYLIB_CODE_SIGN_DRS: Code signing DRs copied from linked dylibs."); break;
              case(LC_ENCRYPTION_INFO_64):  printf("LC_ENCRYPTION_INFO_64: 64-bit encrypted segment information."); break;
              case(LC_LINKER_OPTION):       printf("LC_LINKER_OPTION: Linker options in MH_OBJECT files."); break;
+             case(LC_DYLD_EXPORTS_TRIE): printf("LC_DYLD_EXPORTS_TRIE: used with linkedit_data_command, payload is trie."); break;
+             case(LC_DYLD_CHAINED_FIXUPS): printf("LC_DYLD_CHAINED_FIXUPS: used with linkedit_data_command."); break;
          }
 
          printf("\n");
+         // go to the next command
          lseek(fd, lc.cmdsize-sizeof(lc), SEEK_CUR);
+
+
      }
       return;
 }
 
 int check_architecture(int fd)
 {
-int magic;
-
-
-lseek(fd,0,SEEK_SET);
-read(fd,&magic,sizeof(magic));
-#ifdef DEBUG
-    printf("Arch magic is: %x\n", magic);
-#endif
-
+    int magic;
+    lseek(fd,0,SEEK_SET);
+    read(fd,&magic,sizeof(magic));
+    #ifdef DEBUG
+        printf("Arch magic is: %x\n", magic);
+    #endif
 
     if(magic==MH_MAGIC)
     	return ARCH386;
@@ -178,10 +179,8 @@ read(fd,&magic,sizeof(magic));
     if(magic==MH_MAGIC_64)
     	return ARCH64;
 
-
-return ARCHUNKNOWN;
+    return ARCHUNKNOWN;
 }
-
 
 int main (int argc, char *argv[])
 {
@@ -207,6 +206,7 @@ int main (int argc, char *argv[])
     }
     print_header(fd); 
     print_load_commands(fd);
+
 
     close(fd);
 
