@@ -224,26 +224,20 @@ void print_load_commands(int fd)
         {
             std::vector<char> dt(lc.cmdsize, 0);
             #ifdef DEBUG
-                printf("LC_BUILD_VERSION Cmd size is: %d load command header size: %d \n", lc.cmdsize, sizeof(lc));
+                printf("LC_BUILD_VERSION Cmd size is: %d load command header size: %lu \n", lc.cmdsize, sizeof(lc));
             #endif 
 
             memcpy(dt.data(), &lc, sizeof(lc));
-            // lseek(fd, lc.cmdsize-sizeof(lc), SEEK_CUR);
-
             read(fd, dt.data() + sizeof(lc), lc.cmdsize - sizeof(lc));
 
             hexdump(dt.data(), dt.size());
             printf("\n");
-
-
         }
         else
         {
             // go to the next command
             lseek(fd, lc.cmdsize-sizeof(lc), SEEK_CUR);
         }
-
-
     }
       return;
 }
