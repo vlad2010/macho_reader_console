@@ -1,5 +1,67 @@
 #include "macho_reader.h"
 
+#include <iomanip> 
+#include <iostream>
+#include <vector>
+
+#define LINESIZE 16
+void _hexdump(std::ostream& stream , char *data, int len)
+{
+  unsigned int lines = (len%LINESIZE)?(len/LINESIZE + 1):(len/LINESIZE);
+  unsigned int pos=0;
+
+  for(int i=0;i<lines;i++)
+  {
+    stream << std::hex <<  std::setw ( 5 ) << std::setfill('0') << pos   <<"h | "<< std::dec ;
+    unsigned int started_pos=pos;
+    for(int j=0;j<LINESIZE;j++)
+    {
+      if(pos>=len)
+      {
+       stream << "  " << " " ;
+      }
+      else
+      {
+       unsigned char byteVal=static_cast<unsigned char>(data[pos]);
+       stream << std::hex << std::setw ( 2 ) <<std::setfill('0')<< static_cast<int>(byteVal) << " " ;
+      }
+     if(j==7)stream << "- " ;
+     ++pos;
+    }//for j
+
+   stream <<  " | ";
+   pos=started_pos;
+   for(int j=0;j<LINESIZE;j++)
+    {
+     if(   (data[pos]>=32) )
+     {
+      if(pos>=len)
+       {
+       stream << " " ;
+       }
+      else
+       {
+        stream << std::setw ( 1 ) << static_cast<char>((data[pos]))  ;
+       }
+     }
+     else
+     {
+        stream << std::hex << std::setw ( 1 ) << "."  ;
+     }
+     ++pos;
+    }//for j
+    stream <<  " | " << std::endl;
+  }//for i
+} //end function
+
+
+//распечатывает кусок  сырых данных в hex как в notron commander.
+void hexdump(char *data, int len)
+{
+    _hexdump(std::cout, data, len);
+}
+
+
 void print_help()
 {
      printf ("Usage: %s executable file\n", EXENAME); 
@@ -91,6 +153,8 @@ void print_load_commands(int fd)
    struct load_command lc;
 
    lseek(fd, 0, SEEK_SET);
+
+   // read load command header 
    read(fd, &mh, sizeof(mh));
 
     printf("Number of load commands     : %d\n",mh.ncmds);
@@ -102,65 +166,85 @@ void print_load_commands(int fd)
          //printf ("\n%02d) Command type: 0x%08x Size:%d \n", i, lc.cmd, lc.cmdsize);
          printf("%02d) 0x%08x Size:%04d ",i+1, lc.cmd, lc.cmdsize);
 
-         switch(lc.cmd) 
-         {
-             case(LC_SEGMENT): printf("LC_SEGMENT: Segment of this file to be mapped."); break;
-             case(LC_SYMTAB):  printf("LC_SYMTAB: Link-edit stab symbol table info."); break;
-             case(LC_SYMSEG):  printf("LC_SYMSEG: Link-edit gdb symbol table info (obsolete)."); break;
-             case(LC_THREAD):      printf("LC_THREAD: Thread\n"); break;
-             case(LC_UNIXTHREAD):  printf("LC_UNIXTHREAD: Unix thread (includes a stack)."); break;
-             case(LC_LOADFVMLIB):  printf("LC_LOADFVMLIB: Load a specified fixed VM shared library."); break;
-             case(LC_IDFVMLIB):    printf("LC_IDFVMLIB: Fixed VM shared library identification."); break;
-             case(LC_IDENT):      printf("LC_IDENT: Object identification info (obsolete)."); break;
-             case(LC_FVMFILE):    printf("LC_FVMFILE: Fixed VM file inclusion (internal use)."); break;
-             case(LC_PREPAGE):    printf("LC_PREPAGE: Prepage command (internal use)."); break;
-             case(LC_DYSYMTAB):   printf("LC_DYSYMTAB: Dynamic link-edit symbol table info."); break;
-             case(LC_LOAD_DYLIB):      printf("LC_LOAD_DYLIB: Load a dynamically linked shared library."); break;
-             case(LC_ID_DYLIB):        printf("LC_ID_DYLIB: Dynamically linked shared lib ident."); break;
-             case(LC_LOAD_DYLINKER):   printf("LC_LOAD_DYLINKER: Load a dynamic linker."); break;
-             case(LC_ID_DYLINKER):    printf("LC_ID_DYLINKER: Dynamic linker identification."); break;
-             case(LC_PREBOUND_DYLIB): printf("LC_PREBOUND_DYLIB: Modules prebound for a dynamically."); break;
-             case(LC_ROUTINES):       printf("LC_ROUTINES: Image routines."); break;
-             case(LC_SUB_FRAMEWORK):    printf("LC_SUB_FRAMEWORK: Sub framework."); break;
-             case(LC_SUB_UMBRELLA):     printf("LC_SUB_UMBRELLA: Sub framework."); break;
-             case(LC_SUB_CLIENT):       printf("LC_SUB_CLIENT: Sub framework."); break;
-             case(LC_SUB_LIBRARY):        printf("LC_SUB_LIBRARY: Sub library."); break;
-             case(LC_TWOLEVEL_HINTS):     printf("LC_TWOLEVEL_HINTS: Two-level namespace lookup hints."); break;
-             case(LC_PREBIND_CKSUM):      printf("LC_PREBIND_CKSUM: Prebind checksum."); break;
-             case(LC_LOAD_WEAK_DYLIB):printf("LC_LOAD_WEAK_DYLIB: Weak load?"); break;
-             case(LC_SEGMENT_64):     printf("LC_SEGMENT_64: 64-bit segment of this file to be mapped."); break;
-             case(LC_ROUTINES_64):    printf("LC_ROUTINES_64: 64-bit image routines."); break;
-             case(LC_UUID):            printf("LC_UUID: The UUID."); break;
-             case(LC_RPATH):           printf("LC_RPATH: Runpath additions."); break;
-             case(LC_CODE_SIGNATURE):  printf("LC_CODE_SIGNATURE: Local of code signature."); break;
-             case(LC_SEGMENT_SPLIT_INFO): printf("LC_SEGMENT_SPLIT_INFO: Local of info to split segments."); break;
-             case(LC_REEXPORT_DYLIB):     printf("LC_REEXPORT_DYLIB: Load and re-export dylib."); break;
-             case(LC_LAZY_LOAD_DYLIB):    printf("LC_LAZY_LOAD_DYLIB: Delay load of dylib until first use."); break;
-             case(LC_ENCRYPTION_INFO): printf("LC_ENCRYPTION_INFO: Encrypted segment information."); break;
-             case(LC_DYLD_INFO):     printf("LC_DYLD_INFO: Compressed dyld information."); break;
-             case(LC_DYLD_INFO_ONLY):    printf("LC_DYLD_INFO_ONLY: Compressed dyld information only."); break;
-             case(LC_LOAD_UPWARD_DYLIB): printf("LC_LOAD_UPWARD_DYLIB: Load upward dylib."); break;
-             case(LC_VERSION_MIN_MACOSX):     printf("LC_VERSION_MIN_MACOSX: Minimum Mac OS X version."); break;
-             case(LC_BUILD_VERSION):  printf("LC_BUILD_VERSION: Minimum Mac OS X version."); break;
-             case(LC_VERSION_MIN_IPHONEOS):    printf("LC_VERSION_MIN_IPHONEOS: Minimum iOS version."); break;
-             case(LC_FUNCTION_STARTS): printf("LC_FUNCTION_STARTS: Compressed table of function start addresses."); break;
-             case(LC_DYLD_ENVIRONMENT):     printf("LC_DYLD_ENVIRONMENT: String for dyld to treat like environment variable."); break;
-             case(LC_MAIN):    printf("LC_MAIN: Replacement for LC_UNIXTHREAD."); break;
-             case(LC_DATA_IN_CODE):        printf("LC_DATA_IN_CODE: Table of non-instructions in __text."); break;
-             case(LC_SOURCE_VERSION):      printf("LC_SOURCE_VERSION: Source version used to build binary."); break;
-             case(LC_DYLIB_CODE_SIGN_DRS): printf("LC_DYLIB_CODE_SIGN_DRS: Code signing DRs copied from linked dylibs."); break;
-             case(LC_ENCRYPTION_INFO_64):  printf("LC_ENCRYPTION_INFO_64: 64-bit encrypted segment information."); break;
-             case(LC_LINKER_OPTION):       printf("LC_LINKER_OPTION: Linker options in MH_OBJECT files."); break;
-             case(LC_DYLD_EXPORTS_TRIE): printf("LC_DYLD_EXPORTS_TRIE: used with linkedit_data_command, payload is trie."); break;
-             case(LC_DYLD_CHAINED_FIXUPS): printf("LC_DYLD_CHAINED_FIXUPS: used with linkedit_data_command."); break;
-         }
+        switch(lc.cmd) 
+        {
+            case(LC_SEGMENT): printf("LC_SEGMENT: Segment of this file to be mapped."); break;
+            case(LC_SYMTAB):  printf("LC_SYMTAB: Link-edit stab symbol table info."); break;
+            case(LC_SYMSEG):  printf("LC_SYMSEG: Link-edit gdb symbol table info (obsolete)."); break;
+            case(LC_THREAD):      printf("LC_THREAD: Thread\n"); break;
+            case(LC_UNIXTHREAD):  printf("LC_UNIXTHREAD: Unix thread (includes a stack)."); break;
+            case(LC_LOADFVMLIB):  printf("LC_LOADFVMLIB: Load a specified fixed VM shared library."); break;
+            case(LC_IDFVMLIB):    printf("LC_IDFVMLIB: Fixed VM shared library identification."); break;
+            case(LC_IDENT):      printf("LC_IDENT: Object identification info (obsolete)."); break;
+            case(LC_FVMFILE):    printf("LC_FVMFILE: Fixed VM file inclusion (internal use)."); break;
+            case(LC_PREPAGE):    printf("LC_PREPAGE: Prepage command (internal use)."); break;
+            case(LC_DYSYMTAB):   printf("LC_DYSYMTAB: Dynamic link-edit symbol table info."); break;
+            case(LC_LOAD_DYLIB):      printf("LC_LOAD_DYLIB: Load a dynamically linked shared library."); break;
+            case(LC_ID_DYLIB):        printf("LC_ID_DYLIB: Dynamically linked shared lib ident."); break;
+            case(LC_LOAD_DYLINKER):   printf("LC_LOAD_DYLINKER: Load a dynamic linker."); break;
+            case(LC_ID_DYLINKER):    printf("LC_ID_DYLINKER: Dynamic linker identification."); break;
+            case(LC_PREBOUND_DYLIB): printf("LC_PREBOUND_DYLIB: Modules prebound for a dynamically."); break;
+            case(LC_ROUTINES):       printf("LC_ROUTINES: Image routines."); break;
+            case(LC_SUB_FRAMEWORK):    printf("LC_SUB_FRAMEWORK: Sub framework."); break;
+            case(LC_SUB_UMBRELLA):     printf("LC_SUB_UMBRELLA: Sub framework."); break;
+            case(LC_SUB_CLIENT):       printf("LC_SUB_CLIENT: Sub framework."); break;
+            case(LC_SUB_LIBRARY):        printf("LC_SUB_LIBRARY: Sub library."); break;
+            case(LC_TWOLEVEL_HINTS):     printf("LC_TWOLEVEL_HINTS: Two-level namespace lookup hints."); break;
+            case(LC_PREBIND_CKSUM):      printf("LC_PREBIND_CKSUM: Prebind checksum."); break;
+            case(LC_LOAD_WEAK_DYLIB):printf("LC_LOAD_WEAK_DYLIB: Weak load?"); break;
+            case(LC_SEGMENT_64):     printf("LC_SEGMENT_64: 64-bit segment of this file to be mapped."); break;
+            case(LC_ROUTINES_64):    printf("LC_ROUTINES_64: 64-bit image routines."); break;
+            case(LC_UUID):            printf("LC_UUID: The UUID."); break;
+            case(LC_RPATH):           printf("LC_RPATH: Runpath additions."); break;
+            case(LC_CODE_SIGNATURE):  printf("LC_CODE_SIGNATURE: Local of code signature."); break;
+            case(LC_SEGMENT_SPLIT_INFO): printf("LC_SEGMENT_SPLIT_INFO: Local of info to split segments."); break;
+            case(LC_REEXPORT_DYLIB):     printf("LC_REEXPORT_DYLIB: Load and re-export dylib."); break;
+            case(LC_LAZY_LOAD_DYLIB):    printf("LC_LAZY_LOAD_DYLIB: Delay load of dylib until first use."); break;
+            case(LC_ENCRYPTION_INFO): printf("LC_ENCRYPTION_INFO: Encrypted segment information."); break;
+            case(LC_DYLD_INFO):     printf("LC_DYLD_INFO: Compressed dyld information."); break;
+            case(LC_DYLD_INFO_ONLY):    printf("LC_DYLD_INFO_ONLY: Compressed dyld information only."); break;
+            case(LC_LOAD_UPWARD_DYLIB): printf("LC_LOAD_UPWARD_DYLIB: Load upward dylib."); break;
+            case(LC_VERSION_MIN_MACOSX):     printf("LC_VERSION_MIN_MACOSX: Minimum Mac OS X version."); break;
+            case(LC_BUILD_VERSION):  printf("LC_BUILD_VERSION: Minimum Mac OS X version."); break;
+            case(LC_VERSION_MIN_IPHONEOS):    printf("LC_VERSION_MIN_IPHONEOS: Minimum iOS version."); break;
+            case(LC_FUNCTION_STARTS): printf("LC_FUNCTION_STARTS: Compressed table of function start addresses."); break;
+            case(LC_DYLD_ENVIRONMENT):     printf("LC_DYLD_ENVIRONMENT: String for dyld to treat like environment variable."); break;
+            case(LC_MAIN):    printf("LC_MAIN: Replacement for LC_UNIXTHREAD."); break;
+            case(LC_DATA_IN_CODE):        printf("LC_DATA_IN_CODE: Table of non-instructions in __text."); break;
+            case(LC_SOURCE_VERSION):      printf("LC_SOURCE_VERSION: Source version used to build binary."); break;
+            case(LC_DYLIB_CODE_SIGN_DRS): printf("LC_DYLIB_CODE_SIGN_DRS: Code signing DRs copied from linked dylibs."); break;
+            case(LC_ENCRYPTION_INFO_64):  printf("LC_ENCRYPTION_INFO_64: 64-bit encrypted segment information."); break;
+            case(LC_LINKER_OPTION):       printf("LC_LINKER_OPTION: Linker options in MH_OBJECT files."); break;
+            case(LC_DYLD_EXPORTS_TRIE): printf("LC_DYLD_EXPORTS_TRIE: used with linkedit_data_command, payload is trie."); break;
+            case(LC_DYLD_CHAINED_FIXUPS): printf("LC_DYLD_CHAINED_FIXUPS: used with linkedit_data_command."); break;
+        }
 
-         printf("\n");
-         // go to the next command
-         lseek(fd, lc.cmdsize-sizeof(lc), SEEK_CUR);
+        printf("\n");
+        if(lc.cmd ==  LC_BUILD_VERSION)
+        {
+            std::vector<char> dt(lc.cmdsize, 0);
+            #ifdef DEBUG
+                printf("LC_BUILD_VERSION Cmd size is: %d load command header size: %d \n", lc.cmdsize, sizeof(lc));
+            #endif 
+
+            memcpy(dt.data(), &lc, sizeof(lc));
+            // lseek(fd, lc.cmdsize-sizeof(lc), SEEK_CUR);
+
+            read(fd, dt.data() + sizeof(lc), lc.cmdsize - sizeof(lc));
+
+            hexdump(dt.data(), dt.size());
+            printf("\n");
 
 
-     }
+        }
+        else
+        {
+            // go to the next command
+            lseek(fd, lc.cmdsize-sizeof(lc), SEEK_CUR);
+        }
+
+
+    }
       return;
 }
 
